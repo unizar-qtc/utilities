@@ -53,24 +53,14 @@ if [ ! -s ${fichero_calculos_lanzados} ] || [[ -z $(grep '[^[:space:]]' ${ficher
 fi
 
 # Llenaremos las listas con el contenido de calculos_lanzados.txt
-while IFS= read -r linea
-do        # Cada linea de este archivo contiene la direccion completa del output y el ID del calculo separado por un espacio 
-    calculo_en_la_linea=$(echo $linea | cut -d " " -f 2 )                # el nombre del calculo viene despues del primer espacio 
-    num_ID_en_la_linea=$(echo $linea | cut -d " " -f 1 )                 # el ID del calculo va antes del primer espacio 
-    fecha_en_la_linea=$(echo $linea | cut -d " " -f 3,4 )                # La fechas son los 2 siguientes huecos
-
-    # añadimos el nombre e ID del calculo a sus correspondientes arrays
-    calculos_por_mirar=( "${calculos_por_mirar[@]}" "$calculo_en_la_linea" )
-    nums_ID_por_mirar=( "${nums_ID_por_mirar[@]}" "$num_ID_en_la_linea" )
-    fecha_lanzamiento=( "${fecha_lanzamiento[@]}" "$fecha_en_la_linea" )
-
-done < ${fichero_calculos_lanzados} # tomamos todos los datos de los cálculos que hemos lanzado
-
+nums_ID_por_mirar=( $(awk '{print $1}' ${fichero_calculos_lanzados}) )                        # el ID del calculo va en la primera columna
+calculos_por_mirar=( $(awk '{print $2}' ${fichero_calculos_lanzados}) )                       # el nombre del calculo va en la segunda columna
+fecha_lanzamiento=( $(awk '{printf("%s_%s\n"), $3, $4}' ${fichero_calculos_lanzados}) )       # la fechas son los 2 siguientes huecos (separamos por barrabaja)
 
 # guardamos en una variable la salida del sistema de colas (contiene los IDs nuestros calculos)
 # cross-compatibility: iterar y acumular la salida de los programas de MEMENTO/CIERZO/...
 job_reporters=('/cm/shared/apps/sge/6.2u5p2/bin/lx26-amd64/qstat' '/cm/shared/apps/slurm/14.11.6/bin/sacct')
-for reporter in ${job_reporters[@]}; do { queue_report="$queue_report"$($reporter) ; } 2>/dev/null ; done
+for reporter in ${job_reporters[@]}; do { queue_report+=$($reporter) ; } 2>/dev/null ; done
 
 rm ${fichero_calculos_corriendo} 2>/dev/null # eliminamos calculos_corriendo porque ahora volveremos a examinar su estado y reescribirlo 
 
@@ -204,7 +194,8 @@ do   # Se contrastan los calculos que hay que mirar con cada uno que sigue corri
         Resto=$( expr 120 - ${#Output} )
         for ((i=0; i<${Resto}; i++)){ Output+=' '�; }    #Añadimos espacios hastllegar 120 caracteres
 
-        Output+="  ||   lanzado ${fecha_lanzamiento[$indice]}"
+        Output+="  ||   lanzado $(echo ${fecha_lanzamiento_1[$i]} | tr '_' ' ' )"   # Sustimos barrabaja por espacio
+        
         echo $Output >> ${fichero_calculos_corriendo}
 
     else # Si no lo encuentra el ID  es porque el calculo ha acabado
