@@ -37,15 +37,19 @@
 #################################################################################################################################################
 #################################################################################################################################################
 
+# variables de ficheros para uso interno del programa
+fichero_calculos_lanzados="$HOME/bin/calculos_lanzados.txt"
+fichero_calculos_corriendo="$HOME/bin/calculos_corriendo.txt"
+fichero_calculos_terminados="$HOME/bin/calculos_terminados.txt"
+fichero_ID="$HOME/bin/IDs.txt"
+
 # empezamos por crear una lista de los calculos que vamos a comprobar el estado y otra paralela con su ID
- 
 declare -a calculos_por_mirar #seran arrays
 declare -a nums_ID_por_mirar
 declare -a fecha_lanzamiento  #date +"%T %d-%m"
 
 # Llenaremos las listas con el contenido de calculos_lanzados.txt
-
-if [[ -z $(grep '[^[:space:]]' ~/bin/calculos_lanzados.txt) ]]; then 
+if [[ -z $(grep '[^[:space:]]' ${fichero_calculos_lanzados}) ]]; then 
    exit 1  # Primero comprobamos que no esta vacio, si lo esta abortamos el proceso
 fi
 
@@ -60,14 +64,14 @@ do        # Cada linea de este archivo contiene la direccion completa del output
     nums_ID_por_mirar=( "${nums_ID_por_mirar[@]}" "$num_ID_en_la_linea" )
     fecha_lanzamiento=( "${fecha_lanzamiento[@]}" "$fecha_en_la_linea" )
 
-done < ~/bin/calculos_lanzados.txt # tomamos todos los datos de los cálculos que hemos lanzado
+done < ${fichero_calculos_lanzados} # tomamos todos los datos de los cálculos que hemos lanzado
 
 
 # actualizamos IDs.txt un archivo en el que estan todos los IDs de calculos corriendo actualmente
-/cm/shared/apps/sge/6.2u5p2/bin/lx26-amd64/qstat > IDs.txt 2>/dev/null  #MEMENTO
-#/cm/shared/apps/slurm/14.11.6/bin/sacct > IDs.txt 2>/dev/null           #CIERZO
+/cm/shared/apps/sge/6.2u5p2/bin/lx26-amd64/qstat > ${fichero_ID} 2>/dev/null  #MEMENTO
+#/cm/shared/apps/slurm/14.11.6/bin/sacct > ${fichero_ID} 2>/dev/null           #CIERZO
 
-rm ~/bin/calculos_corriendo.txt 2>/dev/null # eliminamos calculos_corriendo porque ahora volveremos a examinar su estado y reescribirlo 
+rm ${fichero_calculos_corriendo} 2>/dev/null # eliminamos calculos_corriendo porque ahora volveremos a examinar su estado y reescribirlo 
 
 
 # Entramos en cada uno de los archivos y comprobamos su estado
@@ -79,7 +83,7 @@ do   # Se contrastan los calculos que hay que mirar con cada uno que sigue corri
 
     Calculo_abreviado=$( echo ${calculos_por_mirar[$indice]} | cut -d/ -f 4-99 ) 
  
-    if grep -q "${nums_ID_por_mirar[$indice]}" IDs.txt 2>/dev/null 
+    if grep -q "${nums_ID_por_mirar[$indice]}" ${fichero_ID} 2>/dev/null 
     then # Si lo encuentra entre los IDs, el calculo todavia no ha acabado y veremos en que estado esta 
         
         # Comprobamos si ya existe un output, si no es posible que este esperando en cola
@@ -211,7 +215,7 @@ do   # Se contrastan los calculos que hay que mirar con cada uno que sigue corri
         for ((i=0; i<${Resto}; i++)){ Output+=' '�; }    #Añadimos espacios hastllegar 120 caracteres
 
         Output+="  ||   lanzado ${fecha_lanzamiento[$indice]}"
-        echo $Output >> ~/bin/calculos_corriendo.txt
+        echo $Output >> ${fichero_calculos_corriendo}
 
     else    # Si no lo encuentra el ID  es porque el calculo ha acabado
 
@@ -276,10 +280,10 @@ do   # Se contrastan los calculos que hay que mirar con cada uno que sigue corri
         
         fecha_terminacion=$( date +"%T %d-%m" )
         Output+="  || terminado ${fecha_terminacion}"
-        echo $Output >> ~/bin/calculos_terminados.txt
+        echo $Output >> ${fichero_calculos_terminados}
 
-        resto_de_calculos=$( grep -v ${calculos_por_mirar[$indice]} ~/bin/calculos_lanzados.txt )
-        echo $resto_de_calculos > ~/bin/calculos_lanzados.txt 
+        resto_de_calculos=$( grep -v ${calculos_por_mirar[$indice]} ${fichero_calculos_lanzados} )
+        echo $resto_de_calculos > ${fichero_calculos_lanzados} 
 
     fi
 
