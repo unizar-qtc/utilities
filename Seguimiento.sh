@@ -81,7 +81,12 @@ for indice in "${!calculos_por_mirar[@]}"
 
 do   # Se contrastan los calculos que hay que mirar con cada uno que sigue corriendo
 
-    Calculo_abreviado=$( echo ${calculos_por_mirar[$indice]} | cut -d/ -f 4-99 ) 
+    Calculo_abreviado=$( echo ${calculos_por_mirar[$indice]} | cut -d/ -f 4-99 )
+    
+    # Output por defecto
+    Tarea="       UNKNOWN"
+    Estado=" "
+    Ciclos=" " 
  
     if [[ "${queue_report}" =~ "${nums_ID_por_mirar[$indice]}" ]]
     then # Si lo encuentra entre los IDs, el calculo todavia no ha acabado y veremos en que estado esta 
@@ -163,17 +168,9 @@ do   # Se contrastan los calculos que hay que mirar con cada uno que sigue corri
                     Ciclos="${Ciclos} cic"
 
                 elif [[ -z "${Linea_de_keywords##*'freq'*}"  ]]; then # si es un calculo de frequencias
-
                     Tarea="FREQ"
-                    Estado="       "
-                    Ciclos="     "
-
                 else # será un calculo puntual
-
                     Tarea="SCF "
-                    Estado="       "
-                    Ciclos="     "
-
                 fi
 
             elif grep -Fq  "GROMACS" ${calculos_por_mirar[$indice]}
@@ -188,21 +185,14 @@ do   # Se contrastan los calculos que hay que mirar con cada uno que sigue corri
                 Estado=""
                 Ciclos=$( grep -A 1 " Step           Time" ${calculos_por_mirar[$indice]} | awk '{print $1}' | tail -n 1 )
                 Ciclos="$Ciclos/$Limite_ciclos steps"
-
-            else
-
-                Tarea=" UNKNOWN "
-                Estado="   "
-                Ciclos="   "
-                        
+            elif grep -q  "DYNAMO Module Library" ${calculos_por_mirar[$indice]}
+            then
+                Tarea=$(awk '/>>> / {print $2 }' ${calculos_por_mirar[$indice]})
             fi
-
         else
             ######## SI EL OUTPUT NO SE HA GENERADO TODAVIA ENTONCES DEBE ESTAR ESPERANDO EN COLA #########
             Tarea=""
             Estado="WAITING IN QUEUE"
-            Ciclos=""
-
         fi
 
         # finalmente preparamos el mensaje que pondremos en calculos corriendo 
@@ -217,59 +207,38 @@ do   # Se contrastan los calculos que hay que mirar con cada uno que sigue corri
         Output+="  ||   lanzado ${fecha_lanzamiento[$indice]}"
         echo $Output >> ${fichero_calculos_corriendo}
 
-    else    # Si no lo encuentra el ID  es porque el calculo ha acabado
+    else # Si no lo encuentra el ID  es porque el calculo ha acabado
 
         #                                                                           # 
         #-----------------------------CALCULO ACABADOS------------------------------#
         #                                                                           #
 
         if [[ -f "${calculos_por_mirar[$indice]}" ]]; then # Por si acaso comprobamos si el calculo existe
-            # Si sabemos que existe tenemos que comprobar el programa que es para 
-            if grep -q  "Gaussian, Inc" ${calculos_por_mirar[$indice]}; then    # Si es un calculo de gaussian
-
+            # Si sabemos que existe tenemos que comprobar el programa que es
+            # GAUSSIAN
+            if grep -q  "Gaussian, Inc" ${calculos_por_mirar[$indice]}; then
                 if ( tail -n 1 ${calculos_por_mirar[$indice]} | grep -q "Normal termination" ); then 
-
                     Tarea="          DONE"
-                    Estado=" "
-                    Ciclos=" "
-
                 else
-
                     Tarea="          FAIL"
-                    Estado=" "
-                    Ciclos=" "
-
                 fi
-
-            elif grep -q  "GROMACS" ${calculos_por_mirar[$indice]}; then    # Si es un calculo de gaussian
-
+            # GROMACS
+            elif grep -q  "GROMACS" ${calculos_por_mirar[$indice]}; then
                 if grep -q "Normal termination" $( tail -n 1 ${calculos_por_mirar[$indice]} ); then 
-
                     Tarea="          DONE"
-                    Estado=" "
-                    Ciclos=" "
-
                 else
-
                     Tarea="          FAIL"
-                    Estado=" "
-                    Ciclos=" "
-
                 fi
-
-            else # SI el programa no se reconoce
-
-                    Tarea="        UNKNOWN  "
-                    Estado=" "
-                    Ciclos=" "
-
+            # DYNAMON
+            elif grep -q  "DYNAMO Module Library" ${calculos_por_mirar[$indice]}; then
+                if grep -q "<<<<<<<<<<<<" $( tail -n 1 ${calculos_por_mirar[$indice]} ); then 
+                    Tarea="          DONE"
+                else
+                    Tarea="          FAIL"
+                fi
             fi
-
         else
-
             Tarea="         ERROR"
-            Estado=" "
-            Ciclos=" "
         fi
 
         IFS='' #Cambiamos el Internal Field Separator para que no se coma los espacios que ponemos en la linea de Output
