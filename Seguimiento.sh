@@ -2,38 +2,38 @@
 
 #################################################################################################################################################
 #################################################################################################################################################
-##                                                                                                                                             ##          
-## Este programa esta pensado para ser añadido en el crontab y que se ejecute constantemente por su cuenta, para ello ejecuta:                 ##     
-##           $ crontab -e                                                                                                                      ##     
-##                                                                                                                                             ##         
-## para ejecutar el programa cada 10 min pon:                                                                                                  ##   
-##           */10 * * * * /bin/Seguimiento.sh                                                                                                  ##           
-##                                                                                                                                             ##    
-##                                                                                                                                             ##    
-## Tambien será necesario añadir un apartado en los lanzadores que añada información de los calculos lanzados a calculos_lanzados.txt          ##      
-## echo "$archivo_output $ID_calculo $date" >> calculos_lanzados.txt                                                                           ##        
-##                                                                                                                                             ##        
-## Un ejemplo para un calculo de gaussian:                                                                                                     ##      
-## sleep 0.5                                                   #dejamos tiempo para que el calculo aparezca en el qstat                        ##
-##                                                                                                                                             ##
-## #incluimos el archivo con su ID en la lista de seguimiento                                                                                  ##
-## /cm/shared/apps/sge/6.2u5p2/bin/lx26-amd64/qstat > IDs.job  # creamos un archivo temporal con el qstat                                      ##
-## id_num=`tail -n 1 IDs.job | cut -c1-7 `                     # tomamos los 7 primeros caracteres que son el ID del calculo                   ##
-## fecha=$(date +"%T %d-%m") `                                 # fecha y hora a la que el calculo es lanzado/entra                             ##
-## archivo=$id_num'    '$donde/$calc.log'     '$fecha          # esto es lo que se añadira a calculos lanzados                                 ##
-##                                                                                                                                             ##
-## echo "$archivo" >> $HOME/bin/calculos_lanzados.txt                                                                                          ##
-## rm IDs.job                                                                                                                                  ##     
-##                                                                                                                                             ##     
-## Aparte recominedo añadir al .bashrc:                                                                                                        ##     
-##          echo "--CALCULOS CORRIENDO--"                                                                                                      ##     
-##          cat calculos_corriendo.txt                                                                                                         ##     
-##          echo " "                                                                                                                           ##     
-##          echo "--CALCULOS TERMINADOS--"                                                                                                     ##     
-##          cat calculos_terminados.txt                                                                                                        ##     
-##          echo " "                                                                                                                           ##     
-##                                                                                                                                             ##     
-##                                                                                                                                             ##     
+##
+## Este programa esta pensado para ser añadido en el crontab y que se ejecute constantemente por su cuenta, para ello ejecuta:
+##           $ crontab -e
+##       
+## para ejecutar el programa cada 10 min pon:
+##           */10 * * * * /bin/Seguimiento.sh
+##
+##
+## Tambien será necesario añadir un apartado en los lanzadores que añada información de los calculos lanzados a calculos_lanzados.txt
+## echo "$ID_calculo $archivo_output $date" >> calculos_lanzados.txt
+##
+##
+## Un ejemplo para un calculo de gaussian:
+##
+## # definimos los ficheros de nuestro calculo
+## jobfile="my_calc_to_submit.job
+## outfile="my_calculation_results.log
+## # lanzamos el calculo en MEMENTO/CIERZO/..
+## for submitter in qsub sbatch; do { response+=$($submitter $jobfile) ; } 2>/dev/null ; done
+## echo "$response
+## # incluimos el ID del trabajo, el archivo de salida y fecha de lanzamiento en la lista de seguimiento
+## echo "$(echo $response | grep -oP '\d{7}')  $outfile  $(date +'%T %d-%m')"  >> calculos_lanzados.tx
+##
+##
+## Aparte recominedo añadir al .bashrc:
+##          echo "--CALCULOS CORRIENDO--"
+##          cat calculos_corriendo.txt
+##          echo " "
+##          echo "--CALCULOS TERMINADOS--"
+##          cat calculos_terminados.txt
+##          echo " "
+##    
 #################################################################################################################################################
 #################################################################################################################################################
 
