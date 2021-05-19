@@ -41,7 +41,6 @@
 fichero_calculos_lanzados="$HOME/bin/calculos_lanzados.txt"
 fichero_calculos_corriendo="$HOME/bin/calculos_corriendo.txt"
 fichero_calculos_terminados="$HOME/bin/calculos_terminados.txt"
-fichero_ID="$HOME/bin/IDs.txt"
 
 # empezamos por crear una lista de los calculos que vamos a comprobar el estado y otra paralela con su ID
 declare -a calculos_por_mirar #seran arrays
@@ -67,11 +66,10 @@ do        # Cada linea de este archivo contiene la direccion completa del output
 done < ${fichero_calculos_lanzados} # tomamos todos los datos de los cálculos que hemos lanzado
 
 
-# actualizamos IDs.txt un archivo en el que estan todos los IDs de calculos corriendo actualmente
+# guardamos en una variable la salida del sistema de colas (contiene los IDs nuestros calculos)
 # cross-compatibility: iterar y acumular la salida de los programas de MEMENTO/CIERZO/...
 job_reporters=('/cm/shared/apps/sge/6.2u5p2/bin/lx26-amd64/qstat' '/cm/shared/apps/slurm/14.11.6/bin/sacct')
-for reporter in ${job_reporters[@]}; do { report="$report"$($reporter) ; } 2>/dev/null ; done
-echo "$report" > ${fichero_ID}
+for reporter in ${job_reporters[@]}; do { queue_report="$queue_report"$($reporter) ; } 2>/dev/null ; done
 
 rm ${fichero_calculos_corriendo} 2>/dev/null # eliminamos calculos_corriendo porque ahora volveremos a examinar su estado y reescribirlo 
 
@@ -84,7 +82,7 @@ do   # Se contrastan los calculos que hay que mirar con cada uno que sigue corri
 
     Calculo_abreviado=$( echo ${calculos_por_mirar[$indice]} | cut -d/ -f 4-99 ) 
  
-    if grep -q "${nums_ID_por_mirar[$indice]}" ${fichero_ID} 2>/dev/null 
+    if [[ "${queue_report}" =~ "${nums_ID_por_mirar[$indice]}" ]]
     then # Si lo encuentra entre los IDs, el calculo todavia no ha acabado y veremos en que estado esta 
         
         # Comprobamos si ya existe un output, si no es posible que este esperando en cola
