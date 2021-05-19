@@ -47,11 +47,12 @@ declare -a calculos_por_mirar #seran arrays
 declare -a nums_ID_por_mirar
 declare -a fecha_lanzamiento  #date +"%T %d-%m"
 
-# Llenaremos las listas con el contenido de calculos_lanzados.txt
-if [[ -z $(grep '[^[:space:]]' ${fichero_calculos_lanzados}) ]]; then 
-   exit 1  # Primero comprobamos que no esta vacio, si lo esta abortamos el proceso
+# Comprobamos que el fichero con los calculos lanzados existe y que no está vacío
+if [ ! -s ${fichero_calculos_lanzados} ] || [[ -z $(grep '[^[:space:]]' ${fichero_calculos_lanzados}) ]]; then 
+   exit 1
 fi
 
+# Llenaremos las listas con el contenido de calculos_lanzados.txt
 while IFS= read -r linea
 do        # Cada linea de este archivo contiene la direccion completa del output y el ID del calculo separado por un espacio 
     calculo_en_la_linea=$(echo $linea | cut -d " " -f 2 )                # el nombre del calculo viene despues del primer espacio 
