@@ -68,11 +68,12 @@ done < ${fichero_calculos_lanzados} # tomamos todos los datos de los cálculos q
 
 
 # actualizamos IDs.txt un archivo en el que estan todos los IDs de calculos corriendo actualmente
-/cm/shared/apps/sge/6.2u5p2/bin/lx26-amd64/qstat > ${fichero_ID} 2>/dev/null  #MEMENTO
-#/cm/shared/apps/slurm/14.11.6/bin/sacct > ${fichero_ID} 2>/dev/null           #CIERZO
+# cross-compatibility: iterar y acumular la salida de los programas de MEMENTO/CIERZO/...
+job_reporters=('/cm/shared/apps/sge/6.2u5p2/bin/lx26-amd64/qstat' '/cm/shared/apps/slurm/14.11.6/bin/sacct')
+for reporter in ${job_reporters[@]}; do { report="$report"$($reporter) ; } 2>/dev/null ; done
+echo "$report" > ${fichero_ID}
 
 rm ${fichero_calculos_corriendo} 2>/dev/null # eliminamos calculos_corriendo porque ahora volveremos a examinar su estado y reescribirlo 
-
 
 # Entramos en cada uno de los archivos y comprobamos su estado
 # para iterar en el ciclo emplearemos el indice (!) en array de los calculos por mirar en lugar de los nombres
