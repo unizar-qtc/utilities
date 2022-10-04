@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Description : Convert the last coordinates of a Gaussian .log to a input file
-# Last update : 11-07-2022
+# Last update : 04-10-2022
 # Author      : Julen Munarriz & Sergio Boneta
 
 import argparse
@@ -18,6 +18,8 @@ parser.add_argument('--charge', metavar='#', type=int, required=False, help='Cha
 parser.add_argument('--multi', metavar='#', type=int, required=False, help='Multiplicity (otherwise readed from .log)')
 parser.add_argument('--func', metavar='<>', type=str, required=False, default='B3LYP', help='DFT Functional (def: B3LYP)')
 parser.add_argument('--basis', metavar='<>', type=str, required=False, default='Def2SVP', help='Basis set (def: Def2SVP)')
+parser.add_argument('--calc', metavar='<>', type=str, nargs='*', required=False, default=['opt', 'freq=noraman'], help='Calculation parameters, can be empty (def: \'opt freq=noraman\')')
+parser.add_argument('--dispersion', action='store_true', required=False, help='Add GD3BJ Empirical Dispersion')
 args = parser.parse_args()
 file_log = args.log
 file_inp = args.com
@@ -26,6 +28,8 @@ charge   = args.charge
 multi    = args.multi
 func     = args.func
 basis    = args.basis
+calc_param = f"{' '.join(args.calc)}"
+dispersion = "EmpiricalDispersion=GD3BJ" if args.dispersion else ""
 
 # Read .log file
 with open(file_log, 'r') as f:
@@ -76,7 +80,7 @@ if file_com_extension not in ['.com', '.gjf']:
 # Write new Gaussian input file
 with open(file_inp, 'w') as f:
     f.write(dedent(f"""\
-        # opt {func} {basis} EmpiricalDispersion=GD3BJ freq=noraman
+        # {func} {basis} {calc_param} {dispersion}
         # int=(grid=ultrafine)
 
         {name}
